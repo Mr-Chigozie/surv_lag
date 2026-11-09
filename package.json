@@ -1,0 +1,17 @@
+{
+  "name": "lagos-traffic-survivor",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A 3D traffic-survival driving game set on Lagos roads (Three.js + Tailwind + Node).",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "three": "^0.170.0",
+    "ws": "^8.22.2"
+  }
+}

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111a17">
+    <meta name="description" content="Choose your ride and see how long you can survive the Lagos rush.">
+    <title>Lagos Traffic Survivor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root { color-scheme: dark; font-family: "DM Sans", sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: #101714; color: #f4f3e9; }
+      button { font: inherit; }
+      .mono { font-family: "DM Mono", monospace; }
+      .display { font-family: "Space Grotesk", sans-serif; }
+      .canvas-wrap { position: relative; overflow: hidden; background: #b6d2b7; }
+      #game-canvas { display: block; width: 100%; height: 100%; }
+      .grain { background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E"); }
+      .card-select { transition: border-color .2s, transform .2s, background .2s; }
+      .card-select:hover { transform: translateY(-3px); }
+      .card-select.selected { border-color: #c9f06b; background: #242d23; box-shadow: 0 0 0 1px #c9f06b inset; }
+      .touch-btn { touch-action: none; user-select: none; -webkit-user-select: none; }
+      @media (max-width: 640px) {
+        .game-layout { grid-template-columns: minmax(0, 1fr) !important; }
+        .side-panel { display: none; }
+        .canvas-wrap { height: min(58vh, 500px) !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="mx-auto max-w-[1440px] px-4 py-4 sm:px-7 sm:py-7">
+      <header class="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+        <a href="#" class="flex items-center gap-3 no-underline text-inherit" aria-label="Lagos Traffic Survivor home">
+          <span class="grid h-10 w-10 place-items-center rounded-xl bg-[#c9f06b] text-xl text-[#182016]">↗</span>
+          <span>
+            <span class="display block text-[15px] font-bold tracking-tight">LAGOS <span class="text-[#c9f06b]">TRAFFIC</span></span>
+            <span class="mono block text-[9px] tracking-[.22em] text-white/40">SURVIVAL CLUB · EST. 2024</span>
+          </span>
+        </a>
+        <div class="mono hidden items-center gap-2 text-[10px] tracking-[.13em] text-white/50 sm:flex">
+          <span class="h-2 w-2 rounded-full bg-[#c9f06b] shadow-[0_0_10px_#c9f06b]"></span>
+          MAINLAND → ISLAND
+          <span class="ml-3 text-white/20">/</span>
+          <span class="ml-1">LAGOS, NG</span>
+        </div>
+        <button id="sound-button" class="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65 transition hover:border-white/30 hover:text-white" aria-label="Toggle sound">◖)) <span id="sound-label">SOUND ON</span></button>
+      </header>
+
+      <div class="game-layout grid grid-cols-[minmax(0,1fr)_300px] gap-5">
+        <section class="min-w-0">
+          <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-[#c7d7b6] shadow-2xl">
+            <div class="canvas-wrap h-[min(66vh,660px)] min-h-[410px]">
+              <canvas id="game-canvas" aria-label="Lagos traffic driving game"></canvas>
+              <div id="game-hud" class="pointer-events-none absolute inset-x-0 top-0 z-10 hidden justify-between p-4 sm:p-6">
+                <div class="flex gap-2 sm:gap-3">
+                  <div class="min-w-[91px] rounded-xl border border-white/15 bg-[#111714]/80 px-3 py-2 backdrop-blur-md">
+                    <span class="mono block text-[9px] tracking-widest text-white/45">DISTANCE</span>
+                    <span class="display text-lg font-bold"><span id="distance">0</span><span class="ml-1 text-[10px] font-normal text-white/50">m</span></span>
+                  </div>
+                  <div class="min-w-[85px] rounded-xl border border-white/15 bg-[#111714]/80 px-3 py-2 backdrop-blur-md">
+                    <span class="mono block text-[9px] tracking-widest text-white/45">SPEED</span>
+                    <span class="display text-lg font-bold"><span id="speed">0</span><span class="ml-1 text-[10px] font-normal text-white/50">km/h</span></span>
+                  </div>
+                </div>
+                <button id="pause-button" class="pointer-events-auto grid h-10 w-10 place-items-center rounded-xl border border-white/20 bg-[#111714]/80 text-white backdrop-blur-md hover:bg-[#111714]" aria-label="Pause game">Ⅱ</button>
+              </div>
+
+              <div id="start-screen" class="grain absolute inset-0 z-20 flex items-center justify-center bg-[#111714]/30 p-5 backdrop-blur-[2px]">
+                <div class="w-full max-w-[520px] rounded-2xl border border-white/15 bg-[#111714]/90 p-5 shadow-2xl backdrop-blur-xl sm:p-7">
+                  <div class="mono mb-3 flex items-center gap-2 text-[10px] tracking-[.2em] text-[#c9f06b]"><span class="h-px w-6 bg-[#c9f06b]"></span>THE MORNING RUSH</div>
+                  <h1 class="display mb-2 text-3xl font-bold leading-[1.05] tracking-tight sm:text-4xl">Survive the<br><span class="text-[#c9f06b]">Lagos rush.</span></h1>
+                  <p class="mb-5 max-w-sm text-sm leading-relaxed text-white/60">Danfo drivers, okadas, potholes. Pick your ride and make the mainland-to-island run in one piece.</p>
+                  <div class="mb-4 grid grid-cols-3 gap-2" role="group" aria-label="Choose your vehicle">
+                    <button class="card-select selected rounded-xl border border-white/15 bg-white/[.04] p-3 text-left" data-vehicle="car">
+                      <span class="mb-2 block text-2xl">🚙</span><span class="block text-xs font-bold">SALON CAR</span><span class="mono text-[9px] text-white/45">BALANCED</span>
+                    </button>
+                    <button class="card-select rounded-xl border border-white/15 bg-white/[.04] p-3 text-left" data-vehicle="bike">
+                      <span class="mb-2 block text-2xl">🏍️</span><span class="block text-xs font-bold">OKADA</span><span class="mono text-[9px] text-white/45">NIMBLE</span>
+                    </button>
+                    <button class="card-select rounded-xl border border-white/15 bg-white/[.04] p-3 text-left" data-vehicle="bus">
+                      <span class="mb-2 block text-2xl">🚐</span><span class="block text-xs font-bold">DANFO</span><span class="mono text-[9px] text-white/45">TOUGH</span>
+                    </button>
+                  </div>
+                  <button id="start-button" class="display flex w-full items-center justify-center gap-2 rounded-xl bg-[#c9f06b] py-3.5 text-sm font-bold text-[#182016] transition hover:bg-[#d8ff80] active:scale-[.99]">START YOUR ENGINE <span aria-hidden="true">→</span></button>
+                  <div class="mono mt-3 text-center text-[9px] tracking-wide text-white/35">STEER WITH ← → OR A / D · MOBILE? USE THE ARROWS BELOW</div>
+                </div>
+              </div>
+
+              <div id="end-screen" class="absolute inset-0 z-20 hidden items-center justify-center bg-[#111714]/55 p-5 backdrop-blur-sm">
+                <div class="w-full max-w-sm rounded-2xl border border-white/15 bg-[#111714]/95 p-7 text-center shadow-2xl">
+                  <div id="end-icon" class="mb-2 text-4xl">💥</div>
+                  <p id="end-kicker" class="mono mb-2 text-[10px] tracking-[.2em] text-[#c9f06b]">JOURNEY ENDED</p>
+                  <h2 id="end-title" class="display mb-2 text-3xl font-bold">Traffic got you.</h2>
+                  <p id="end-description" class="mb-5 text-sm text-white/55">Every Lagos legend has a close call.</p>
+                  <div class="mb-5 rounded-xl bg-white/[.05] p-3"><span class="mono block text-[9px] tracking-widest text-white/40">DISTANCE SURVIVED</span><span class="display text-2xl font-bold"><span id="final-distance">0</span> <span class="text-xs font-normal text-white/50">METRES</span></span></div>
+                  <button id="retry-button" class="display w-full rounded-xl bg-[#c9f06b] py-3 font-bold text-[#182016] transition hover:bg-[#d8ff80]">RUN IT BACK ↻</button>
+                </div>
+              </div>
+              <div id="pause-screen" class="absolute inset-0 z-20 hidden items-center justify-center bg-[#111714]/45 p-5 backdrop-blur-sm">
+                <div class="w-full max-w-xs rounded-2xl border border-white/15 bg-[#111714]/95 p-7 text-center shadow-2xl">
+                  <p class="mono mb-2 text-[10px] tracking-[.2em] text-[#c9f06b]">PIT STOP</p>
+                  <h2 class="display mb-4 text-3xl font-bold">Catch your breath.</h2>
+                  <button id="resume-button" class="display w-full rounded-xl bg-[#c9f06b] py-3 font-bold text-[#182016] transition hover:bg-[#d8ff80]">BACK TO THE ROAD ▶</button>
+                </div>
+              </div>
+              <div id="mobile-controls" class="pointer-events-none absolute inset-x-0 bottom-5 z-10 hidden justify-between px-5 sm:px-8">
+                <button id="left-button" class="touch-btn pointer-events-auto grid h-14 w-14 place-items-center rounded-full border border-white/25 bg-[#111714]/65 text-2xl text-white backdrop-blur-md active:bg-[#c9f06b] active:text-[#182016]" aria-label="Steer left">←</button>
+                <button id="right-button" class="touch-btn pointer-events-auto grid h-14 w-14 place-items-center rounded-full border border-white/25 bg-[#111714]/65 text-2xl text-white backdrop-blur-md active:bg-[#c9f06b] active:text-[#182016]" aria-label="Steer right">→</button>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between px-1">
+            <p class="mono text-[9px] tracking-[.13em] text-white/35"><span class="text-[#c9f06b]">●</span> LAGOS MAINLAND — THIRD MAINLAND BRIDGE</p>
+            <p class="mono text-[9px] tracking-[.13em] text-white/35">CLEAR SKIES · HEAVY TRAFFIC</p>
+          </div>
+        </section>
+
+        <aside class="side-panel flex flex-col gap-4">
+          <section class="rounded-2xl border border-white/10 bg-[#171f1b] p-5">
+            <div class="mono mb-4 text-[9px] tracking-[.2em] text-white/40">YOUR MISSION <span class="float-right text-[#c9f06b]">01 / 01</span></div>
+            <h2 class="display mb-2 text-xl font-bold">Beat the gridlock.</h2>
+            <p class="text-xs leading-relaxed text-white/50">Get across Lagos without a scratch. Watch for sudden lane changes and keep your eyes on the road.</p>
+            <div class="my-4 h-px bg-white/10"></div>
+            <div class="flex items-center justify-between"><span class="mono text-[9px] tracking-widest text-white/40">TARGET DISTANCE</span><span class="mono text-xs text-[#c9f06b]">2,000 m</span></div>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div id="progress-bar" class="h-full w-0 rounded-full bg-[#c9f06b] transition-[width] duration-300"></div></div>
+          </section>
+          <section class="overflow-hidden rounded-2xl border border-white/10 bg-[#171f1b]">
+            <div class="border-b border-white/10 px-5 py-4"><span class="mono text-[9px] tracking-[.2em] text-white/40">THE ROUTE</span><div class="display mt-1 text-sm font-semibold">Mainland to the Island</div></div>
+            <div class="p-5">
+              <div class="relative ml-1 border-l border-dashed border-white/20 pl-5">
+                <div class="relative pb-7"><span class="absolute -left-[25px] top-0 h-2.5 w-2.5 rounded-full border-2 border-[#c9f06b] bg-[#171f1b]"></span><span class="mono block text-[9px] text-[#c9f06b]">STARTING LINE</span><span class="text-xs text-white/70">Yaba, Mainland</span></div>
+                <div class="relative pb-7"><span class="absolute -left-[25px] top-0 h-2.5 w-2.5 rounded-full border-2 border-white/30 bg-[#171f1b]"></span><span class="mono block text-[9px] text-white/40">THE GAUNTLET</span><span class="text-xs text-white/70">Third Mainland Bridge</span></div>
+                <div class="relative"><span class="absolute -left-[25px] top-0 h-2.5 w-2.5 rounded-full border-2 border-white/30 bg-[#171f1b]"></span><span class="mono block text-[9px] text-white/40">FINISH LINE</span><span class="text-xs text-white/70">Victoria Island</span></div>
+              </div>
+            </div>
+          </section>
+          <section class="rounded-2xl border border-white/10 bg-[#171f1b] p-5">
+            <div class="mono mb-3 text-[9px] tracking-[.2em] text-white/40">ROAD NOTES</div>
+            <div class="space-y-3">
+              <div class="flex gap-3"><span class="text-base">🚧</span><p class="text-[11px] leading-relaxed text-white/55"><b class="text-white/80">Potholes ahead.</b> They don't care about your suspension.</p></div>
+              <div class="flex gap-3"><span class="text-base">🛺</span><p class="text-[11px] leading-relaxed text-white/55"><b class="text-white/80">Danfo in your blind spot.</b> As is tradition.</p></div>
+              <div class="flex gap-3"><span class="text-base">🛵</span><p class="text-[11px] leading-relaxed text-white/55"><b class="text-white/80">Okadas are everywhere.</b> Respect the hustle.</p></div>
+            </div>
+          </section>
+          <div class="mt-auto flex items-center justify-between px-1 mono text-[9px] tracking-widest text-white/25"><span>NO SHORTCUTS. NO MERCY.</span><span>LTS / 001</span></div>
+        </aside>
+      </div>
+      <footer class="mt-7 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 mono text-[9px] tracking-[.12em] text-white/30"><span>MADE FOR THE ONES WHO KNOW THE WAY.</span><span>© LAGOS TRAFFIC SURVIVOR — DRIVE RESPONSIBLY</span></footer>
+    </main>
+    <script src="./game.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+# Render blueprint for the online server (render.com → New → Blueprint → this repo).
+# The game itself is on GitHub Pages; this runs server.js for online races (/ws) and the leaderboard (/api/scores).
+# If Render gives the service a different URL, update REMOTE_SERVER in public/js/config.js.
+services:
+  - type: web
+    name: lagos-traffic-survivor
+    runtime: node
+    plan: free
+    region: frankfurt            # closest Render region to West Africa
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: CLIENT_ORIGINS
+        value: https://mr-chigozie.github.io
