@@ -63,6 +63,20 @@ Other players appear as cars with name tags, on the minimap and in the live stan
 
 Each player simulates their own traffic, so NPC cars differ slightly between screens. Player positions are synced about 15 times a second over a WebSocket at `/ws`.
 
+## Vehicles
+
+| Vehicle | Price | Top speed | Slots | Character |
+|---|---|---|---|---|
+| Salon Car | free | 137 km/h | 3 | Balanced all-rounder |
+| Keke Napep | ₦6,000 | 90 km/h | 3 | Cheap repairs; sharp turns at speed lift a wheel and scrub speed |
+| Okada | ₦12,000 | 148 km/h | 1 | Lane-splitter, best pay per metre, fragile |
+| Danfo | ₦35,000 | 112 km/h | 8 | Tough, cheap fares, traffic moves when you honk |
+| Molue | ₦50,000 | 90 km/h | 14 | 9.5 m yellow giant, packed stops, very hard to hurt |
+| Power Bike | ₦75,000 | 187 km/h | 1 | Express parcels, fastest and most fragile |
+| Lekki SUV | ₦90,000 | 155 km/h | 4 | VIP fares, traffic gives way, repairs cost a fortune |
+
+All per-vehicle rules (stats, fares, repair cost, camera, sounds) live in the `VEHICLES` table in `public/js/maps.js`.
+
 ## Drivers
 
 | Driver | Style |
@@ -71,6 +85,10 @@ Each player simulates their own traffic, so NPC cars differ slightly between scr
 | Baba Tunde | Horn much more effective, +10% toughness |
 | Chidi | Close passes and coins score more, a bit fragile |
 | Aisha | Better handling, speed and acceleration, more fragile |
+| Emeka | Repair bills 40% cheaper, +10% toughness, slower off the line |
+| Aunty Funke | Fares +15%, each passenger forgives one bump, slightly slower |
+
+Each driver has three outfits (one free, then ₦3,000 and ₦6,000), picked from the swatches on their card. Outfits change the portrait and what the rider wears on an okada, keke or power bike, and other players see them online.
 
 ## Gameplay
 

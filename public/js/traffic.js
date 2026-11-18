@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { LANE_WIDTH } from "./maps.js";
+import { LANE_WIDTH, VEHICLES } from "./maps.js";
 import { buildVehicle, getBlueprint, bodyMaterial } from "./models.js";
 
 const TYPES = {
@@ -180,7 +180,7 @@ export class Traffic {
   }
 
   honk(player) {
-    const bonus = (this.playerVehicle === "bus" ? 0.25 : 0) + this.honkBonus;
+    const bonus = (VEHICLES[this.playerVehicle]?.yield || 0) + this.honkBonus;
     for (const npc of this.list) {
       const ds = npc.s - player.s;
       if (ds < 0 || ds > 45) continue;

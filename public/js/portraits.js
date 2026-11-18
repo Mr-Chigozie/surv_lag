@@ -1,6 +1,8 @@
 // Hand-drawn SVG portraits for the selectable drivers. No image files: each portrait is
 // built from simple shapes so it stays crisp at any size and weighs a few KB.
 
+import { outfitOf } from "./maps.js";
+
 let uid = 0;
 
 const SHOULDERS = "M8 100 C10 80 30 72 50 72 C70 72 90 80 92 100 Z";
@@ -29,13 +31,13 @@ function head(skin, shade, { ears = true, neck = true, rx = 16, ry = 19 } = {}) 
 
 const DRAW = {
   // Mama Nkechi: orange gele, ankara blouse, gold earrings, warm smile.
-  nkechi(id) {
+  nkechi(id, o) {
     const skin = "#6e3f26", shade = "#552f1b";
     return `
       <defs>
         <pattern id="${id}a" width="9" height="9" patternUnits="userSpaceOnUse">
-          <rect width="9" height="9" fill="#17607a"/>
-          <circle cx="4.5" cy="4.5" r="2.6" fill="#f2b705"/><circle cx="4.5" cy="4.5" r="1.1" fill="#e5632f"/>
+          <rect width="9" height="9" fill="${o.cloth}"/>
+          <circle cx="4.5" cy="4.5" r="2.6" fill="${o.dot}"/><circle cx="4.5" cy="4.5" r="1.1" fill="${o.core}"/>
           <circle cx="0" cy="0" r="1.2" fill="#fbf6ee"/><circle cx="9" cy="9" r="1.2" fill="#fbf6ee"/>
         </pattern>
       </defs>
@@ -48,22 +50,22 @@ const DRAW = {
       <ellipse cx="40" cy="55" rx="3.2" ry="2" fill="#c0563a" opacity="0.3"/><ellipse cx="60" cy="55" rx="3.2" ry="2" fill="#c0563a" opacity="0.3"/>
       <path d="M43 59.5 Q50 66.5 57 59.5 Q50 62 43 59.5Z" fill="#7a2a1e"/>
       <path d="M44.5 60.3 Q50 62.4 55.5 60.3 L55 61.3 Q50 63 45 61.3Z" fill="#fff"/>
-      <path d="M30 41 C22 28 20 15 31 9 C39 4 45 12 50 7 C56 1 67 4 72 10 C82 18 80 30 70 41 C62 33 38 33 30 41Z" fill="#f08a24"/>
-      <path d="M66 15 C76 4 92 10 88 24 C82 19 75 20 69 24Z" fill="#e5632f"/>
-      <path d="M34 12 C24 8 12 16 16 28 C21 22 27 21 32 24Z" fill="#e5632f"/>
-      <path d="M33 34 C40 28 60 28 67 34 M31 26 C40 18 58 18 70 24 M37 15 C44 10 56 10 64 14" stroke="#b85a14" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <path d="M30 41 C38 35 62 35 70 41" stroke="#ffb45a" stroke-width="2" fill="none"/>
+      <path d="M30 41 C22 28 20 15 31 9 C39 4 45 12 50 7 C56 1 67 4 72 10 C82 18 80 30 70 41 C62 33 38 33 30 41Z" fill="${o.gele}"/>
+      <path d="M66 15 C76 4 92 10 88 24 C82 19 75 20 69 24Z" fill="${o.geleDark}"/>
+      <path d="M34 12 C24 8 12 16 16 28 C21 22 27 21 32 24Z" fill="${o.geleDark}"/>
+      <path d="M33 34 C40 28 60 28 67 34 M31 26 C40 18 58 18 70 24 M37 15 C44 10 56 10 64 14" stroke="${o.geleLine}" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <path d="M30 41 C38 35 62 35 70 41" stroke="${o.geleHi}" stroke-width="2" fill="none"/>
       <circle cx="33" cy="56" r="2.6" fill="none" stroke="#f2c230" stroke-width="1.4"/>
       <circle cx="67" cy="56" r="2.6" fill="none" stroke="#f2c230" stroke-width="1.4"/>`;
   },
 
   // Baba Tunde: tilted fila cap, grey beard, embroidered agbada.
-  tunde(id) {
+  tunde(id, o) {
     const skin = "#5c3521", shade = "#472816";
     return `
-      <path d="${SHOULDERS}" fill="#efe6d2"/>
-      <path d="M36 74 L50 92 L64 74" stroke="#1f4f7a" stroke-width="3" fill="none"/>
-      <path d="M40 76 L50 88 L60 76" stroke="#f2b705" stroke-width="1.2" fill="none" stroke-dasharray="2 1.5"/>
+      <path d="${SHOULDERS}" fill="${o.robe}"/>
+      <path d="M36 74 L50 92 L64 74" stroke="${o.trim}" stroke-width="3" fill="none"/>
+      <path d="M40 76 L50 88 L60 76" stroke="${o.stitch}" stroke-width="1.2" fill="none" stroke-dasharray="2 1.5"/>
       ${head(skin, shade)}
       <path d="M38 37.5 Q44 36.5 48 38 M52 38 Q56 36.5 62 37.5" stroke="#4a3426" stroke-width="0.8" fill="none"/>
       <path d="M38 43 Q43 40.5 47.5 42.5" stroke="#cfc8be" stroke-width="2.2" fill="none" stroke-linecap="round"/>
@@ -74,21 +76,21 @@ const DRAW = {
       <path d="M33.5 49 C34 66 42 72.5 50 72.5 C58 72.5 66 66 66.5 49 C64 57 60 60.5 50 60.5 C40 60.5 36 57 33.5 49Z" fill="#d9d3ca"/>
       <path d="M42 59 Q46 56 50 57.5 Q54 56 58 59 Q54 61 50 59.8 Q46 61 42 59Z" fill="#e8e3dc"/>
       <path d="M46 63 Q50 64.5 54 63" stroke="#7a2a1e" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-      <path d="M33 37 C32 22 43 17 54 17 C66 17 72 25 69 36 C60 32.5 43 32.5 33 37Z" fill="#1f4f7a"/>
-      <path d="M58 19 C70 11 82 15 80 25 C75 25 70 27 66 31Z" fill="#163c5e"/>
-      <path d="M35 33 C45 29.5 58 29.5 68 32" stroke="#f2b705" stroke-width="1" fill="none" stroke-dasharray="1.5 1.5"/>`;
+      <path d="M33 37 C32 22 43 17 54 17 C66 17 72 25 69 36 C60 32.5 43 32.5 33 37Z" fill="${o.cap}"/>
+      <path d="M58 19 C70 11 82 15 80 25 C75 25 70 27 66 31Z" fill="${o.capDark}"/>
+      <path d="M35 33 C45 29.5 58 29.5 68 32" stroke="${o.stitch}" stroke-width="1" fill="none" stroke-dasharray="1.5 1.5"/>`;
   },
 
   // Chidi: high-top fade, shades, gold chain, yellow jersey, big grin.
-  chidi(id) {
+  chidi(id, o) {
     const skin = "#7d4b2c", shade = "#623820";
     return `
       <defs>
         <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a4b5c"/><stop offset="0.5" stop-color="#0d1218"/><stop offset="1" stop-color="#22303d"/></linearGradient>
       </defs>
-      <path d="${SHOULDERS}" fill="#f2b705"/>
-      <path d="M22 84 L30 100 M78 84 L70 100" stroke="#2e7d4a" stroke-width="4"/>
-      <path d="M40 73 Q50 80 60 73 L58 72 Q50 77 42 72Z" fill="#2e7d4a"/>
+      <path d="${SHOULDERS}" fill="${o.jersey}"/>
+      <path d="M22 84 L30 100 M78 84 L70 100" stroke="${o.trim}" stroke-width="4"/>
+      <path d="M40 73 Q50 80 60 73 L58 72 Q50 77 42 72Z" fill="${o.trim}"/>
       ${head(skin, shade, { ry: 18.5 })}
       <path d="M34 40 C33 22 39 17 50 17 C61 17 67 22 66 40 C64 35 61 33 50 33 C39 33 36 35 34 40Z" fill="#17100b"/>
       <path d="M34 40 C34.5 35 37 33.5 40 33 M66 40 C65.5 35 63 33.5 60 33" stroke="#3a2a20" stroke-width="2.4" fill="none"/>
@@ -105,32 +107,82 @@ const DRAW = {
   },
 
   // Aisha: hijab, rally goggles, racing jacket, confident smirk.
-  aisha(id) {
+  aisha(id, o) {
     const skin = "#8e5735", shade = "#6f4126";
     return `
-      <path d="${SHOULDERS}" fill="#c72f2f"/>
-      <path d="M16 86 C24 79 30 77 34 77 M84 86 C76 79 70 77 66 77" stroke="#fbf6ee" stroke-width="3.5" fill="none"/>
-      <rect x="67" y="86" width="12" height="7" rx="1.5" fill="#fbf6ee" transform="rotate(-8 73 89)"/>
-      <path d="M69.5 90.5 L76.5 89.5" stroke="#c72f2f" stroke-width="1.2" transform="rotate(-8 73 89)"/>
-      <path d="M50 21 C31 21 27 37 28.5 52 C30 68 37 78 50 80 C63 78 70 68 71.5 52 C73 37 69 21 50 21Z" fill="#4b2462"/>
-      <path d="M30 100 C30 84 38 77 50 79 C62 77 70 84 70 100Z" fill="#4b2462"/>
+      <path d="${SHOULDERS}" fill="${o.jacket}"/>
+      <path d="M16 86 C24 79 30 77 34 77 M84 86 C76 79 70 77 66 77" stroke="${o.stripe}" stroke-width="3.5" fill="none"/>
+      <rect x="67" y="86" width="12" height="7" rx="1.5" fill="${o.stripe}" transform="rotate(-8 73 89)"/>
+      <path d="M69.5 90.5 L76.5 89.5" stroke="${o.jacket}" stroke-width="1.2" transform="rotate(-8 73 89)"/>
+      <path d="M50 21 C31 21 27 37 28.5 52 C30 68 37 78 50 80 C63 78 70 68 71.5 52 C73 37 69 21 50 21Z" fill="${o.hijab}"/>
+      <path d="M30 100 C30 84 38 77 50 79 C62 77 70 84 70 100Z" fill="${o.hijab}"/>
       ${head(skin, shade, { ears: false, neck: false, rx: 15, ry: 18 })}
       <path d="M39.5 42.5 Q43.5 40.5 47.5 42 M52.5 42 Q56.5 40.5 60.5 42" stroke="#1a0e08" stroke-width="1.3" fill="none" stroke-linecap="round"/>
       ${eyes(true)}${nose(shade)}
       <path d="M44 60.5 Q50 62.5 57 59" stroke="#6e2420" stroke-width="1.8" fill="none" stroke-linecap="round"/>
       <path d="M56.5 58.4 Q58 58.6 58.4 57.2" stroke="${shade}" stroke-width="0.8" fill="none" stroke-linecap="round"/>
-      <path d="M28.5 52 C27.5 34 35 21 50 21 C65 21 72.5 34 71.5 52 L66 52 C66.5 40 60 33.5 50 33.5 C40 33.5 33.5 40 34 52Z" fill="#5d2d79"/>
-      <path d="M34 52 C33.5 40 40 33.5 50 33.5 C60 33.5 66.5 40 66 52" stroke="#a04ec2" stroke-width="1.4" fill="none"/>
+      <path d="M28.5 52 C27.5 34 35 21 50 21 C65 21 72.5 34 71.5 52 L66 52 C66.5 40 60 33.5 50 33.5 C40 33.5 33.5 40 34 52Z" fill="${o.hijabTop}"/>
+      <path d="M34 52 C33.5 40 40 33.5 50 33.5 C60 33.5 66.5 40 66 52" stroke="${o.hijabLine}" stroke-width="1.4" fill="none"/>
       <path d="M30 31 Q50 23 70 31" stroke="#1b1b1b" stroke-width="3.2" fill="none"/>
       <circle cx="41.5" cy="27.5" r="5.2" fill="#ff9f1c" stroke="#1b1b1b" stroke-width="1.8"/>
       <circle cx="58.5" cy="27.5" r="5.2" fill="#ff9f1c" stroke="#1b1b1b" stroke-width="1.8"/>
       <path d="M39 25.5 Q41 24 43 25 M56 25.5 Q58 24 60 25" stroke="#ffe2b0" stroke-width="1" fill="none"/>
       <circle cx="59" cy="76" r="1.6" fill="#f2c230"/>`;
+  },
+
+  // Emeka: sideways cap, moustache, grease smudge, overalls with a spanner in the bib.
+  emeka(id, o) {
+    const skin = "#6a3c22", shade = "#52301c";
+    return `
+      <path d="${SHOULDERS}" fill="${o.tee}"/>
+      <path d="M26 100 L28 84 L72 84 L74 100Z" fill="${o.overalls}"/>
+      <path d="M30 86 L37 74 M70 86 L63 74" stroke="${o.overalls}" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="32.5" cy="85" r="1.6" fill="#d8d0c4"/><circle cx="67.5" cy="85" r="1.6" fill="#d8d0c4"/>
+      <rect x="41" y="88" width="18" height="9" rx="1.5" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1"/>
+      <path d="M45 86 L47.5 96" stroke="#a8a8a0" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="44.6" cy="85" r="2.2" fill="none" stroke="#a8a8a0" stroke-width="1.6"/>
+      ${head(skin, shade)}
+      <path d="M38.5 42 Q43 40 47.5 41.5 M52.5 41.5 Q57 40 61.5 42" stroke="#1a0e08" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+      ${eyes()}${nose(shade)}
+      <path d="M42 56.2 Q46 53.4 50 55 Q54 53.4 58 56.2 Q54 57.6 50 56.6 Q46 57.6 42 56.2Z" fill="#1a0e08"/>
+      <path d="M44.5 59.5 Q50 64.5 55.5 59.5" stroke="#6e2420" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M58 51.5 q3.5 -1.2 6.2 0.8" stroke="#2a2a2a" stroke-width="2.2" opacity="0.4" stroke-linecap="round"/>
+      <path d="M33.5 38 C33 24 41 18.5 50 18.5 C59 18.5 67 24 66.5 38 C60 34.5 40 34.5 33.5 38Z" fill="${o.cap}"/>
+      <path d="M34.5 37.5 C30 37.5 24 35.5 23 32 C26 30 31 30.5 36 33Z" fill="${o.cap}" stroke="rgba(0,0,0,.25)" stroke-width="0.8"/>
+      <path d="M38 25 Q50 20.5 62 25" stroke="rgba(0,0,0,.2)" stroke-width="1" fill="none"/>
+      <circle cx="50" cy="19.3" r="1.5" fill="rgba(0,0,0,.3)"/>`;
+  },
+
+  // Aunty Funke: braided high bun, headband, bold lips, puffed sleeves, drop earrings.
+  funke(id, o) {
+    const skin = "#7a4528", shade = "#5e331c";
+    return `
+      <path d="M31 72 C22 62 22 42 30 30 L70 30 C78 42 78 62 69 72Z" fill="#1a110c"/>
+      <path d="M30 42 L28 78 M34 44 L33 80 M66 44 L67 80 M70 42 L72 78" stroke="#2f2016" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="${SHOULDERS}" fill="${o.blouse}"/>
+      <path d="M8 94 C8 80 18 72 31 74 C31 83 24 91 8 94Z M92 94 C92 80 82 72 69 74 C69 83 76 91 92 94Z" fill="${o.blouse}" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
+      <path d="M40 73 Q50 82 60 73" stroke="${o.band}" stroke-width="2.2" fill="none"/>
+      <circle cx="50" cy="79.5" r="2" fill="${o.band}" stroke="#f2c230" stroke-width="0.7"/>
+      ${head(skin, shade, { ears: false, rx: 15.5, ry: 18.5 })}
+      <path d="M38.5 41.5 Q43 39 47.5 41 M52.5 41 Q57 39 61.5 41.5" stroke="#1a0e08" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      ${eyes(true)}${nose(shade)}
+      <ellipse cx="40" cy="54" rx="3" ry="1.8" fill="#d0587a" opacity="0.28"/><ellipse cx="60" cy="54" rx="3" ry="1.8" fill="#d0587a" opacity="0.28"/>
+      <path d="M43.5 59 Q50 57 56.5 59 Q50 65.5 43.5 59Z" fill="${o.lips}"/>
+      <path d="M44 59.2 Q50 60.6 56 59.2" stroke="#3a0f18" stroke-width="0.6" fill="none"/>
+      <circle cx="59.5" cy="57.5" r="0.9" fill="#2a160c"/>
+      <path d="M34 44 C33 30 40 25 50 25 C60 25 67 30 66 44 C63 36 57 33 50 33 C43 33 37 36 34 44Z" fill="#1a110c"/>
+      <path d="M42 26.5 L44 33 M50 25.5 L50 33 M58 26.5 L56 33" stroke="#3a281c" stroke-width="1"/>
+      <ellipse cx="50" cy="15" rx="11" ry="9" fill="#1a110c"/>
+      <path d="M41 14 Q50 8 59 14 M42 18.5 Q50 12.5 58 18.5" stroke="#3a281c" stroke-width="1.1" fill="none"/>
+      <path d="M35 33 C42 26 58 26 65 33" stroke="${o.band}" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <path d="M34.5 52 L34.5 58 M65.5 52 L65.5 58" stroke="#f2c230" stroke-width="0.8"/>
+      <circle cx="34.5" cy="60" r="2.1" fill="${o.band}" stroke="#f2c230" stroke-width="0.8"/>
+      <circle cx="65.5" cy="60" r="2.1" fill="${o.band}" stroke="#f2c230" stroke-width="0.8"/>`;
   }
 };
 
 /** SVG markup for a driver's portrait, clipped to a circle on the driver's colour. */
-export function driverPortrait(driver, className = "") {
+export function driverPortrait(driver, className = "", outfit = 0) {
   const draw = DRAW[driver.id];
   const id = `dp${++uid}`;
   return `<svg class="${className}" viewBox="0 0 100 100" role="img" aria-label="${driver.name}" xmlns="http://www.w3.org/2000/svg">
@@ -140,7 +192,7 @@ export function driverPortrait(driver, className = "") {
     </defs>
     <g clip-path="url(#${id}c)">
       <rect width="100" height="100" fill="url(#${id}b)"/>
-      ${draw ? draw(id) : `<text x="50" y="60" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">${driver.initials}</text>`}
+      ${draw ? draw(id, outfitOf(driver.id, outfit)) : `<text x="50" y="60" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">${driver.initials}</text>`}
     </g>
   </svg>`;
 }

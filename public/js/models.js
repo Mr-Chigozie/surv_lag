@@ -191,6 +191,130 @@ function brtBlueprint() {
   return { body, detail, lights, length: L, width: 2.6, height: 3.3, headY: 0.85, headZ: -5.55 };
 }
 
+/** Seated rider for open vehicles; `lean` tips the torso forward (radians). */
+function rider(shirt, x, y, z, lean = -0.25, helmet = null) {
+  const parts = [
+    part(box(0.44, 0.58, 0.3), shirt, x, y + 0.32, z, lean, 0, 0),
+    part(box(0.34, 0.2, 0.5), 0x2a2a35, x, y - 0.02, z + 0.05),
+    part(box(0.1, 0.42, 0.1), 0x4a2e1e, x - 0.25, y + 0.25, z - 0.32, -1.0, 0, 0),
+    part(box(0.1, 0.42, 0.1), 0x4a2e1e, x + 0.25, y + 0.25, z - 0.32, -1.0, 0, 0)
+  ];
+  const hz = z + Math.sin(lean) * 0.5;
+  if (helmet !== null) {
+    parts.push(part(sphere(0.19, 10), helmet, x, y + 0.78, hz, 0, 0, 0, 1, 0.9, 1.1));
+    parts.push(part(box(0.26, 0.09, 0.05), GLASS, x, y + 0.79, hz - 0.18));
+  } else {
+    parts.push(part(sphere(0.15), 0x4a2e1e, x, y + 0.76, hz));
+  }
+  return parts;
+}
+
+function kekeBlueprint(shirt = 0x2f6fb0) {
+  const body = [
+    part(box(1.3, 0.5, 1.45), 0xffffff, 0, 0.62, 0.5), // passenger tub
+    part(box(0.78, 0.5, 0.95), 0xffffff, 0, 0.62, -0.72), // driver cowl
+    part(box(0.82, 0.62, 0.1), 0xffffff, 0, 0.98, -1.2, -0.22, 0, 0), // nose panel
+    part(box(1.36, 0.08, 2.35), 0xffffff, 0, 1.86, 0.1) // roof
+  ];
+  const detail = [
+    part(box(0.76, 0.5, 0.04), GLASS, 0, 1.5, -1.12, -0.2, 0, 0),
+    part(box(1.32, 0.1, 1.47), 0x2e8a4d, 0, 0.84, 0.5),
+    part(box(0.8, 0.1, 0.97), 0x2e8a4d, 0, 0.84, -0.72),
+    part(box(1.3, 0.62, 0.04), 0x1c1c1c, 0, 1.5, 1.22),
+    part(box(1.1, 0.14, 0.5), 0x1a1a1a, 0, 0.95, 0.75), // back bench
+    part(box(1.1, 0.4, 0.1), 0x1a1a1a, 0, 1.15, 1.0),
+    part(box(0.6, 0.04, 0.04), 0x333333, 0, 1.18, -0.9),
+    ...[[-0.63, 1.2], [0.63, 1.2], [-0.4, -1.05], [0.4, -1.05]].map(([x, z]) => part(box(0.06, 1.05, 0.06), 0x333333, x, 1.35, z)),
+    part(cyl(0.27, 0.27, 0.14, 12), 0x161616, 0, 0.27, -1.08, 0, 0, Math.PI / 2),
+    ...wheel(-0.6, 0.3, 0.85, 0.3, 0.16), ...wheel(0.6, 0.3, 0.85, 0.3, 0.16),
+    ...rider(shirt, 0, 0.98, -0.5, -0.12)
+  ];
+  const lights = [
+    part(box(0.22, 0.15, 0.04), HEAD, 0, 1.0, -1.27),
+    part(box(0.14, 0.14, 0.04), TAIL, -0.55, 0.72, 1.23), part(box(0.14, 0.14, 0.04), TAIL, 0.55, 0.72, 1.23)
+  ];
+  return { body, detail, lights, length: 2.8, width: 1.35, height: 1.9, headY: 1.0, headZ: -1.3 };
+}
+
+function molueBlueprint() {
+  const L = 9.5;
+  const body = [
+    part(box(2.45, 2.3, L), 0xffffff, 0, 1.7, 0),
+    part(box(2.3, 0.35, L - 0.6), 0xffffff, 0, 2.98, 0) // rounded roof line
+  ];
+  const detail = [
+    part(box(2.47, 0.78, L - 1.6), GLASS, 0, 2.25, 0.4),
+    part(box(2.25, 0.95, 0.05), GLASS, 0, 2.15, -L / 2 - 0.01),
+    part(box(2.48, 0.13, L + 0.02), 0x111111, 0, 1.55, 0),
+    part(box(2.48, 0.13, L + 0.02), 0x111111, 0, 1.25, 0),
+    part(box(2.48, 1.5, 0.95), 0x151515, 0, 1.55, -3.3), // open doorway (both sides)
+    part(box(2.48, 1.5, 0.95), 0x151515, 0, 1.55, 2.6),
+    part(box(1.9, 0.12, 5.5), 0x3a3a3a, 0, 3.24, 0.3), // roof rack
+    part(box(0.5, 0.35, 0.6), 0x8b6b3e, -0.4, 3.45, -0.8),
+    part(box(0.6, 0.3, 0.5), 0x6fb3d9, 0.45, 3.43, 1.4),
+    part(box(2.5, 0.3, 0.25), DARK, 0, 0.6, -L / 2 - 0.08),
+    part(box(2.5, 0.3, 0.2), DARK, 0, 0.6, L / 2 + 0.05),
+    part(box(1.2, 0.18, 0.04), 0x111111, 0, 3.0, -L / 2 - 0.02), // destination board
+    // conductor hanging out of the front door
+    part(box(0.3, 0.6, 0.28), 0xb8433a, 1.32, 1.85, -3.3, 0, 0, -0.25),
+    part(sphere(0.14), 0x4a2e1e, 1.42, 2.3, -3.3),
+    part(box(0.1, 0.5, 0.1), 0x4a2e1e, 1.25, 2.3, -3.05, 0, 0, 0.3),
+    ...wheel(-1.1, 0.55, -3.0, 0.55, 0.35), ...wheel(1.1, 0.55, -3.0, 0.55, 0.35),
+    ...wheel(-1.1, 0.55, 2.9, 0.55, 0.35), ...wheel(1.1, 0.55, 2.9, 0.55, 0.35),
+    ...wheel(-1.1, 0.55, 3.9, 0.55, 0.35), ...wheel(1.1, 0.55, 3.9, 0.55, 0.35)
+  ];
+  const lights = [
+    part(box(0.38, 0.22, 0.04), HEAD, -0.85, 0.95, -L / 2 - 0.02), part(box(0.38, 0.22, 0.04), HEAD, 0.85, 0.95, -L / 2 - 0.02),
+    part(box(0.28, 0.35, 0.04), TAIL, -1.0, 1.0, L / 2 + 0.02), part(box(0.28, 0.35, 0.04), TAIL, 1.0, 1.0, L / 2 + 0.02)
+  ];
+  return { body, detail, lights, length: L, width: 2.5, height: 3.6, headY: 0.95, headZ: -L / 2 - 0.05 };
+}
+
+function suvBlueprint() {
+  const L = 4.9;
+  const body = [
+    part(box(1.98, 0.85, L), 0xffffff, 0, 0.88, 0),
+    part(box(1.86, 0.08, 2.95), 0xffffff, 0, 1.94, 0.4),
+    part(box(1.92, 0.2, 1.2), 0xffffff, 0, 1.36, -1.8, -0.06, 0, 0)
+  ];
+  const detail = [
+    part(box(1.88, 0.62, 3.0), GLASS, 0, 1.6, 0.4),
+    part(box(2.02, 0.3, 0.25), DARK, 0, 0.46, -2.45),
+    part(box(2.02, 0.3, 0.25), DARK, 0, 0.46, 2.45),
+    part(box(1.2, 0.32, 0.04), 0xb8b8b0, 0, 0.98, -2.46), // chrome grille
+    part(box(0.06, 0.06, 2.7), 0x8a8a84, -0.82, 2.01, 0.4), part(box(0.06, 0.06, 2.7), 0x8a8a84, 0.82, 2.01, 0.4),
+    part(box(0.14, 0.06, 2.5), 0x2a2a2a, -1.04, 0.46, 0), part(box(0.14, 0.06, 2.5), 0x2a2a2a, 1.04, 0.46, 0),
+    part(cyl(0.38, 0.38, 0.22, 12), 0x161616, 0, 1.0, 2.55, Math.PI / 2, 0, 0), // spare wheel
+    ...wheel(-0.92, 0.44, -1.55, 0.44, 0.32), ...wheel(0.92, 0.44, -1.55, 0.44, 0.32),
+    ...wheel(-0.92, 0.44, 1.55, 0.44, 0.32), ...wheel(0.92, 0.44, 1.55, 0.44, 0.32)
+  ];
+  const lights = [
+    part(box(0.42, 0.12, 0.04), HEAD, -0.7, 1.08, -2.46), part(box(0.42, 0.12, 0.04), HEAD, 0.7, 1.08, -2.46),
+    part(box(0.12, 0.4, 0.04), TAIL, -0.9, 1.1, 2.46), part(box(0.12, 0.4, 0.04), TAIL, 0.9, 1.1, 2.46)
+  ];
+  return { body, detail, lights, length: L, width: 2.0, height: 2.0, headY: 1.08, headZ: -2.5 };
+}
+
+function superbikeBlueprint(shirt = 0x1f1f1f) {
+  const body = [
+    part(box(0.42, 0.42, 0.85), 0xffffff, 0, 0.82, -0.45), // front fairing
+    part(box(0.36, 0.24, 0.5), 0xffffff, 0, 1.02, -0.02), // tank
+    part(box(0.28, 0.16, 0.55), 0xffffff, 0, 1.08, 0.62, 0.25, 0, 0), // tail
+    part(box(0.32, 0.24, 0.6), 0xffffff, 0, 0.55, 0.05)
+  ];
+  const detail = [
+    part(cyl(0.33, 0.33, 0.17, 14), 0x141414, 0, 0.33, -0.72, 0, 0, Math.PI / 2),
+    part(cyl(0.34, 0.34, 0.2, 14), 0x141414, 0, 0.34, 0.72, 0, 0, Math.PI / 2),
+    part(box(0.3, 0.2, 0.04), GLASS, 0, 1.12, -0.86, -0.7, 0, 0),
+    part(box(0.07, 0.6, 0.07), 0x9a9a92, 0, 0.62, -0.68, 0.4, 0, 0),
+    part(box(0.12, 0.12, 0.5), 0x7a7a7a, 0.2, 0.62, 0.55, -0.2, 0, 0),
+    part(box(0.28, 0.08, 0.45), 0x1a1a1a, 0, 1.1, 0.3),
+    ...rider(shirt, 0, 1.08, 0.12, -0.75, 0x16161a)
+  ];
+  const lights = [part(box(0.24, 0.1, 0.05), HEAD, 0, 0.92, -0.89), part(box(0.18, 0.06, 0.04), TAIL, 0, 1.15, 0.9)];
+  return { body, detail, lights, length: 2.1, width: 0.8, height: 1.75, headY: 0.92, headZ: -0.92 };
+}
+
 const blueprintCache = new Map();
 function blueprint(key, factory) {
   if (!blueprintCache.has(key)) {
@@ -202,12 +326,17 @@ function blueprint(key, factory) {
 
 const OKADA_SHIRTS = [0x2f6fb0, 0x2e8a4d, 0xd7a02a, 0x8a2f6b, 0xdedad0];
 
-export function getBlueprint(type, variant = 0) {
+/** `rider` (hex number) dresses the person on open player vehicles in their outfit colour. */
+export function getBlueprint(type, variant = 0, rider = null) {
   switch (type) {
     case "car": return blueprint("car", carBlueprint);
     case "bus":
     case "danfo": return blueprint("danfo", danfoBlueprint);
-    case "bike": return blueprint("bike-player", () => okadaBlueprint(0x1f1f1f, false, true));
+    case "bike": return blueprint(`bike-player-${rider}`, () => okadaBlueprint(rider ?? 0x1f1f1f, false, true));
+    case "keke": return blueprint(`keke-${rider}`, () => kekeBlueprint(rider ?? 0x2f6fb0));
+    case "superbike": return blueprint(`superbike-${rider}`, () => superbikeBlueprint(rider ?? 0x1f1f1f));
+    case "molue": return blueprint("molue", molueBlueprint);
+    case "suv": return blueprint("suv", suvBlueprint);
     case "okada": {
       const v = variant % 10;
       return blueprint(`okada-${v}`, () => okadaBlueprint(OKADA_SHIRTS[v % OKADA_SHIRTS.length], v >= 5));
@@ -219,8 +348,8 @@ export function getBlueprint(type, variant = 0) {
   }
 }
 
-export function buildVehicle(type, color, variant = 0) {
-  const bp = getBlueprint(type, variant);
+export function buildVehicle(type, color, variant = 0, rider = null) {
+  const bp = getBlueprint(type, variant, rider);
   const group = new THREE.Group();
   const inner = new THREE.Group(); // inner group can lean/bounce without fighting road placement
   group.add(inner);

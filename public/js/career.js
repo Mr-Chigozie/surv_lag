@@ -1,12 +1,18 @@
 // Career = everything that persists between shifts: wallet, unlocks, upgrades, paint.
 // Stored in localStorage; every access is guarded because storage can be unavailable.
 
+import { VEHICLES, DRIVERS, OUTFIT_COSTS } from "./maps.js";
+
+const VEHICLE_IDS = Object.keys(VEHICLES);
+const perVehicle = (fn) => Object.fromEntries(VEHICLE_IDS.map((id) => [id, fn(id)]));
+const perDriver = (fn) => Object.fromEntries(Object.keys(DRIVERS).map((id) => [id, fn(id)]));
+
 const KEY = "lts-career-v1";
 
 export const START_WALLET = 5000;
 
 export const PRICES = {
-  vehicles: { car: 0, bike: 12000, bus: 35000 },
+  vehicles: perVehicle((id) => VEHICLES[id].price),
   routes: { "third-mainland": 0, ikorodu: 0, lekki: 15000, oshodi: 25000 }
 };
 
@@ -14,13 +20,12 @@ export const UPGRADES = {
   engine: { name: "Engine tune", desc: "+5% top speed, +8% acceleration", costs: [6000, 14000, 30000] },
   tyres: { name: "Tyres", desc: "+7% handling", costs: [4000, 10000, 22000] },
   body: { name: "Body work", desc: "+12% toughness", costs: [5000, 12000, 26000] },
-  cargo: { name: "Extra space", desc: "+1 seat / parcel slot (danfo +2)", costs: [8000, 18000] },
+  cargo: { name: "Extra space", desc: "+1 seat / parcel slot (danfo +2, molue +3)", costs: [8000, 18000] },
   horn: { name: "Loud horn", desc: "Traffic moves over more often", costs: [3000, 8000] }
 };
 
-const COST_SCALE = { car: 1, bike: 0.7, bus: 1.4 };
-export const BASE_CAPACITY = { car: 3, bike: 1, bus: 8 };
-export const REPAIR_COST = { car: 4000, bike: 2000, bus: 7000 }; // full wreck repair
+export const BASE_CAPACITY = perVehicle((id) => VEHICLES[id].capacity);
+export const REPAIR_COST = perVehicle((id) => VEHICLES[id].repair); // full wreck repair
 
 export const PAINTS = [
   { id: "factory", name: "Factory", color: null, cost: 0 },
@@ -38,9 +43,11 @@ function defaults() {
     wallet: START_WALLET,
     vehicles: ["car"],
     routes: ["third-mainland", "ikorodu"],
-    upgrades: { car: {}, bike: {}, bus: {} },
-    paints: { car: ["factory"], bike: ["factory"], bus: ["factory"] },
-    paint: { car: "factory", bike: "factory", bus: "factory" },
+    upgrades: perVehicle(() => ({})),
+    paints: perVehicle(() => ["factory"]),
+    paint: perVehicle(() => "factory"),
+    wardrobe: perDriver(() => [0]), // outfits owned per driver
+    outfit: perDriver(() => 0),
     totals: { shifts: 0, delivered: 0, earned: 0 }
   };
 }
@@ -56,6 +63,8 @@ export function loadCareer() {
       upgrades: { ...base.upgrades, ...saved.upgrades },
       paints: { ...base.paints, ...saved.paints },
       paint: { ...base.paint, ...saved.paint },
+      wardrobe: { ...base.wardrobe, ...saved.wardrobe },
+      outfit: { ...base.outfit, ...saved.outfit },
       totals: { ...base.totals, ...saved.totals }
     };
   } catch {
@@ -76,11 +85,11 @@ export const level = (career, vehicleId, key) => career.upgrades[vehicleId]?.[ke
 /** Cost of the next level of an upgrade, or null when maxed. */
 export function upgradeCost(vehicleId, key, currentLevel) {
   const cost = UPGRADES[key].costs[currentLevel];
-  return cost === undefined ? null : Math.round((cost * COST_SCALE[vehicleId]) / 500) * 500;
+  return cost === undefined ? null : Math.round((cost * VEHICLES[vehicleId].costScale) / 500) * 500;
 }
 
 export function capacity(career, vehicleId) {
-  return BASE_CAPACITY[vehicleId] + level(career, vehicleId, "cargo") * (vehicleId === "bus" ? 2 : 1);
+  return BASE_CAPACITY[vehicleId] + level(career, vehicleId, "cargo") * VEHICLES[vehicleId].cargoStep;
 }
 
 /** Vehicle spec with garage upgrades applied. */
@@ -103,6 +112,9 @@ export function paintColor(career, vehicleId, fallback) {
   const paint = PAINTS.find((p) => p.id === career.paint[vehicleId]);
   return paint?.color ?? fallback;
 }
+
+export const outfitCost = (index) => OUTFIT_COSTS[index] ?? null;
+export const ownsOutfit = (career, driverId, index) => (career.wardrobe[driverId] || [0]).includes(index);
 
 /** Spend money if the wallet allows it. Returns true on success. */
 export function spend(career, amount) {

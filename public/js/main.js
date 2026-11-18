@@ -1,12 +1,12 @@
 import * as THREE from "three";
-import { MAPS, VEHICLES, DRIVERS } from "./maps.js";
+import { MAPS, VEHICLES, DRIVERS, OUTFITS, outfitOf } from "./maps.js";
 import { Track, makeRng } from "./track.js";
 import { buildWorld } from "./world.js";
 import { Course } from "./course.js";
 import { Traffic } from "./traffic.js";
 import { buildVehicle } from "./models.js";
 import { GameAudio } from "./audio.js";
-import { loadCareer, saveCareer, applyUpgrades, paintColor, upgradeCost, level, spend, PRICES, UPGRADES, PAINTS, REPAIR_COST, BASE_CAPACITY } from "./career.js";
+import { loadCareer, saveCareer, applyUpgrades, paintColor, upgradeCost, level, spend, PRICES, UPGRADES, PAINTS, REPAIR_COST, BASE_CAPACITY, outfitCost, ownsOutfit } from "./career.js";
 import { Jobs, naira } from "./jobs.js";
 import { driverPortrait } from "./portraits.js";
 import { Online, RemoteCars } from "./online.js";
@@ -172,7 +172,7 @@ function newPlayer(vehicleId, track, slot = null) {
   return {
     s: slot ? slot.s : 4, lat: slot ? slot.lat : track.laneCenter(Math.floor(track.lanes / 2)), v: 0, latV: 0, steer: 0,
     health: spec.health, maxHealth: spec.health, w: spec.width, len: spec.length,
-    alive: true, offroad: false, bumpY: 0, bumpV: 0, scrapeT: 0, autopilot: false, armour: vehicleId === "bus" ? 0.6 : vehicleId === "bike" ? 1.25 : 1
+    alive: true, offroad: false, bumpY: 0, bumpV: 0, scrapeT: 0, autopilot: false, armour: spec.armour, tipT: 0
   };
 }
 
@@ -195,7 +195,9 @@ function buildRace(mapId, vehicleId, attract = false, seed = null, gridIndex = n
   const spec = effectiveSpec(vehicleId, driver.id);
   // online: a shared seed gives every player the same customers in the same places
   const jobs = new Jobs(scene, map, track, course, vehicleId, spec.capacity, !attract, seed === null ? Math.random : makeRng(`${seed}-jobs`));
-  const playerMesh = buildVehicle(vehicleId === "bike" ? "bike" : vehicleId === "bus" ? "bus" : "car", paintColor(career, vehicleId, VEHICLES[vehicleId].color));
+  const playerMesh = buildVehicle(VEHICLES[vehicleId].model, paintColor(career, vehicleId, VEHICLES[vehicleId].color), 0, riderColor());
+  jobs.payMul = driver.pay;
+  jobs.forgive = !!driver.forgive;
   scene.add(playerMesh);
   let headlights = null;
   if (map.night) {
@@ -240,7 +242,38 @@ function buildRace(mapId, vehicleId, attract = false, seed = null, gridIndex = n
 function statBar(label, value) {
   return `<div class="mt-1.5"><div class="mb-1 flex justify-between font-mono text-[8px] tracking-widest text-white/40"><span>${label}</span></div><div class="stat-bar"><span style="width:${Math.round(value * 100)}%"></span></div></div>`;
 }
-const ICONS = { car: "🚗", bike: "🏍️", bus: "🚐" };
+const ICONS = Object.fromEntries(Object.values(VEHICLES).map((v) => [v.id, v.icon]));
+const currentOutfit = (driverId = settings.driver) => career.outfit[driverId] || 0;
+/** Rider colour (hex number) for open vehicles, from the driver's outfit. */
+const riderColor = () => parseInt(outfitOf(settings.driver, currentOutfit()).shirt.slice(1), 16);
+
+function outfitSwatches(driverId) {
+  const current = currentOutfit(driverId);
+  return OUTFITS[driverId].map((o, i) => {
+    const has = ownsOutfit(career, driverId, i);
+    return `<span data-outfit="${i}" title="${o.name}${has ? "" : ` · ${naira(outfitCost(i))}`}" class="grid h-6 w-6 shrink-0 cursor-pointer place-items-center rounded-full ring-2 transition ${i === current ? "ring-lime" : "ring-white/15 hover:ring-white/50"}" style="background:${o.shirt}">${has ? "" : `<span class="text-[9px] drop-shadow">🔒</span>`}</span>`;
+  }).join("") + `<span class="ml-1 min-w-0 truncate font-mono text-[8px] tracking-widest text-white/45">${OUTFITS[driverId][current].name.toUpperCase()}</span>`;
+}
+
+/** Wear an outfit, buying it first if needed. Returns false if the player backs out or can't pay. */
+function pickOutfit(driverId, index) {
+  if (!OUTFITS[driverId]?.[index]) return false;
+  if (!ownsOutfit(career, driverId, index)) {
+    const price = outfitCost(index);
+    const label = `${DRIVERS[driverId].name}'s ${OUTFITS[driverId][index].name} outfit`;
+    if (career.wallet < price) {
+      toast(`${label} costs ${naira(price)}. You have ${naira(career.wallet)}.`);
+      return false;
+    }
+    if (!confirm(`Buy ${label} for ${naira(price)}?`)) return false;
+    spend(career, price);
+    career.wardrobe[driverId] = [...(career.wardrobe[driverId] || [0]), index];
+    toast(`${label} bought!`);
+  }
+  career.outfit[driverId] = index;
+  saveCareer(career);
+  return true;
+}
 
 const lockBadge = (price) => `<div class="mt-2 rounded-lg border border-amber/40 bg-amber/10 px-2 py-1.5 text-center font-mono text-[10px] tracking-widest text-amber">🔒 ${naira(price)} · TAP TO BUY</div>`;
 
@@ -253,18 +286,19 @@ function renderMenu() {
       <div class="flex items-center justify-between"><span class="text-2xl">${ICONS[v.id]}</span><span class="font-mono text-[9px] tracking-widest text-white/40">${Math.round(v.maxSpeed * 3.6)} KM/H</span></div>
       <div class="mt-2 font-display text-sm font-bold">${v.name.toUpperCase()}</div>
       <div class="mb-1 text-[11px] leading-snug text-white/50">${v.blurb}</div>
-      ${statBar("TOP SPEED", v.maxSpeed / 42)}${statBar("HANDLING", v.steer / 13)}${statBar("TOUGHNESS", v.health / 180)}
-      ${career.vehicles.includes(v.id) ? `<div class="mt-2 font-mono text-[9px] tracking-widest text-white/45">${BASE_CAPACITY[v.id]} SLOTS${v.id === "bus" ? " · CHEAP FARES" : v.id === "bike" ? " · BEST PAY / METRE" : ""}</div>` : lockBadge(PRICES.vehicles[v.id])}
+      ${statBar("TOP SPEED", v.maxSpeed / 52)}${statBar("HANDLING", v.steer / 14)}${statBar("TOUGHNESS", Math.min(1, v.health / 200))}
+      ${career.vehicles.includes(v.id) ? `<div class="mt-2 font-mono text-[9px] tracking-widest text-white/45">${BASE_CAPACITY[v.id]} SLOTS${v.note ? ` · ${v.note}` : ""}</div>` : lockBadge(PRICES.vehicles[v.id])}
     </button>`).join("");
 
   ui.driverCards.innerHTML = Object.values(DRIVERS).map((d) => `
     <button class="card glass rounded-xl p-3.5 text-left" data-driver="${d.id}" aria-pressed="${d.id === settings.driver}">
       <div class="flex items-center gap-2.5">
-        <span class="block h-14 w-14 shrink-0 rounded-full ring-2 ring-white/10 transition [[aria-pressed=true]_&]:ring-lime">${driverPortrait(d, "h-full w-full")}</span>
+        <span class="block h-14 w-14 shrink-0 rounded-full ring-2 ring-white/10 transition [[aria-pressed=true]_&]:ring-lime">${driverPortrait(d, "h-full w-full", currentOutfit(d.id))}</span>
         <span class="min-w-0"><span class="block font-display text-sm font-bold leading-tight">${d.name}</span><span class="block font-mono text-[8px] tracking-widest text-white/45">${d.title}</span></span>
       </div>
       <div class="mt-2 text-[11px] leading-snug text-white/50">${d.blurb}</div>
       <ul class="mt-2 space-y-0.5 text-[10px] text-white/70">${d.perks.map((p) => `<li>• ${p}</li>`).join("")}</ul>
+      <div class="mt-2.5 flex items-center gap-1.5"><span class="mr-0.5 font-mono text-[8px] tracking-widest text-white/40">OUTFIT</span>${outfitSwatches(d.id)}</div>
     </button>`).join("");
 
   const traffic = (d) => d > 1.3 ? "GRIDLOCK" : d > 1.1 ? "HEAVY" : d > 0.88 ? "BUSY" : "FLOWING";
@@ -314,6 +348,8 @@ ui.vehicleCards.addEventListener("click", (e) => {
 ui.driverCards.addEventListener("click", (e) => {
   const card = e.target.closest("[data-driver]");
   if (!card) return;
+  const swatch = e.target.closest("[data-outfit]");
+  if (swatch && !pickOutfit(card.dataset.driver, Number(swatch.dataset.outfit))) return;
   settings.driver = card.dataset.driver;
   storage.set("lts-driver", settings.driver);
   renderMenu();
@@ -550,7 +586,7 @@ ui.garage.addEventListener("click", (e) => { if (e.target === ui.garage) closeGa
 function settleShift() {
   const jobs = race.jobs;
   const damagePct = (player.maxHealth - player.health) / player.maxHealth;
-  const repair = Math.round((damagePct * REPAIR_COST[race.vehicleId]) / 10) * 10;
+  const repair = Math.round((damagePct * REPAIR_COST[race.vehicleId] * race.driver.repair) / 10) * 10;
   const net = jobs.earned - repair;
   career.wallet = Math.max(0, career.wallet + net);
   career.totals.shifts++;
@@ -575,7 +611,7 @@ function settleShift() {
   for (const job of jobs.delivered) line(`${job.kind === "parcel" ? "📦" : "👤"} ${job.name} · ${Math.round(job.dist)} m`, `+${naira(job.paid)}`, "text-[#5fe08f]");
   if (!jobs.delivered.length) line("No deliveries this shift", "₦0", "text-white/50");
   if (jobs.missed.length) line(`${jobs.missed.length} job${jobs.missed.length > 1 ? "s" : ""} missed`, "₦0", "text-white/50");
-  if (repair) line(`Repair bill (${Math.round(damagePct * 100)}% damage)`, `−${naira(repair)}`, "text-danger");
+  if (repair) line(`Repair bill (${Math.round(damagePct * 100)}% damage${race.driver.repair < 1 ? ", mechanic rate" : ""})`, `−${naira(repair)}`, "text-danger");
   line("Net this shift", `${net < 0 ? "−" : "+"}${naira(Math.abs(net))}`, net < 0 ? "text-danger font-bold" : "text-amber font-bold");
   ui.endWallet.textContent = naira(career.wallet);
 }
@@ -596,7 +632,7 @@ function renderProfile() {
   if (profile.avatar) ui.avatarImg.src = profile.avatar;
   ui.avatarRemove.classList.toggle("hidden", !profile.avatar);
   ui.hudName.textContent = profile.name || "Driver";
-  ui.hudAvatar.innerHTML = profile.avatar ? `<img src="${profile.avatar}" alt="" class="h-full w-full object-cover">` : driverPortrait(DRIVERS[settings.driver], "h-full w-full");
+  ui.hudAvatar.innerHTML = profile.avatar ? `<img src="${profile.avatar}" alt="" class="h-full w-full object-cover">` : driverPortrait(DRIVERS[settings.driver], "h-full w-full", currentOutfit());
 }
 
 function setProfileName(name) {
@@ -882,6 +918,19 @@ function updatePlayer(dt) {
   player.latV += (latTarget - player.latV) * Math.min(1, dt * 6);
   player.lat += player.latV * dt;
 
+  // keke: a sharp turn at speed lifts a wheel and scrubs speed
+  if (spec.tippy) {
+    const load = Math.abs(player.latV) * player.v;
+    if (load > 150 && state === "playing") {
+      player.tipT = Math.min(0.6, player.tipT + dt);
+      player.v = Math.max(0, player.v - (load - 150) * 0.04 * dt);
+      if (player.tipT > 0.45 && !player.tipWarned) { player.tipWarned = true; popup("ON TWO WHEELS!", "text-amber text-lg"); }
+    } else {
+      player.tipT = Math.max(0, player.tipT - dt * 2);
+      if (!player.tipT) player.tipWarned = false;
+    }
+  }
+
   const limit = edgeLimit();
   if (Math.abs(player.lat) > limit) {
     const side = Math.sign(player.lat);
@@ -1004,7 +1053,7 @@ function handleCollisions() {
       hole.hit = true;
       const spec = VEHICLES[race.vehicleId];
       p.bumpV = 3.5;
-      p.v *= race.vehicleId === "bike" ? 0.72 : 0.86;
+      p.v *= spec.potholeSlow;
       audio.pothole();
       race.jobs.onBump();
       damage(spec.potholeDamage * race.driver.potholes * (0.4 + p.v / spec.maxSpeed), "POTHOLE", 0.6);
@@ -1123,16 +1172,11 @@ const jobHooks = {
 };
 
 // ---------------------------------------------------------------- camera
-const CAMS = {
-  car: { dist: 8.5, height: 3.2, hoodH: 1.25 },
-  bike: { dist: 6.2, height: 2.7, hoodH: 1.7 },
-  bus: { dist: 10.5, height: 4.3, hoodH: 1.9 }
-};
 const tmpA = new THREE.Vector3();
 const tmpB = new THREE.Vector3();
 function updateCamera(dt, t) {
   const track = race.track;
-  const c = CAMS[race.vehicleId];
+  const c = VEHICLES[race.vehicleId].cam;
   const speedRatio = player.v / VEHICLES[race.vehicleId].maxSpeed;
   if (player.autopilot && state === "menu") {
     const a = t * 0.12;
@@ -1328,8 +1372,10 @@ function placePlayer(t) {
   race.track.place(race.playerMesh, player.s, player.lat, 0, yaw);
   const inner = race.playerMesh.userData.inner;
   inner.position.y = player.bumpY + (player.offroad ? Math.sin(t * 40) * 0.03 : 0);
-  inner.rotation.z = race.vehicleId === "bike" ? -player.latV * 0.09 : -player.latV * 0.012;
-  inner.rotation.x = race.vehicleId === "bike" ? 0 : -player.bumpY * 0.15;
+  const spec = VEHICLES[race.vehicleId];
+  // a keke on two wheels leans out of the turn; everything else rolls into it
+  inner.rotation.z = -player.latV * spec.lean + (player.tipT > 0 ? Math.sign(player.latV) * Math.min(0.22, player.tipT * 0.5) : 0);
+  inner.rotation.x = spec.lean > 0.05 ? 0 : -player.bumpY * 0.15;
 }
 
 let last = performance.now();
@@ -1426,7 +1472,7 @@ function paintHex() {
   const c = paintColor(career, settings.vehicle, VEHICLES[settings.vehicle].color);
   return `#${(c >>> 0).toString(16).padStart(6, "0").slice(-6)}`;
 }
-const onlineProfile = () => ({ name: profile.name || "Driver", avatar: profile.avatar || null, vehicle: settings.vehicle, driver: settings.driver, paint: paintHex() });
+const onlineProfile = () => ({ name: profile.name || "Driver", avatar: profile.avatar || null, vehicle: settings.vehicle, driver: settings.driver, outfit: currentOutfit(), paint: paintHex() });
 
 function openOnline() {
   clearOnlineError();
@@ -1493,7 +1539,7 @@ function renderOnline() {
     .map((d) => `<option value="${d.id}" ${d.id === settings.driver ? "selected" : ""}>${d.name}</option>`).join("");
 
   ui.onlinePlayers.innerHTML = room.players.map((p) => {
-    const pic = p.avatar && AVATAR_RE.test(p.avatar) ? `<img src="${p.avatar}" alt="" class="h-full w-full object-cover">` : driverPortrait(DRIVERS[p.driver] || DRIVERS.nkechi, "h-full w-full");
+    const pic = p.avatar && AVATAR_RE.test(p.avatar) ? `<img src="${p.avatar}" alt="" class="h-full w-full object-cover">` : driverPortrait(DRIVERS[p.driver] || DRIVERS.nkechi, "h-full w-full", p.outfit || 0);
     const badge = p.id === room.hostId
       ? `<span class="rounded bg-amber/15 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-amber">HOST</span>`
       : p.ready

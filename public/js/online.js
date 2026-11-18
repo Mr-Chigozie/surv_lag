@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { VEHICLES, DRIVERS } from "./maps.js";
+import { VEHICLES, DRIVERS, outfitOf } from "./maps.js";
 import { buildVehicle } from "./models.js";
 import { STATIC_HOST, wsUrl, wakeServer } from "./config.js";
 
@@ -64,7 +64,7 @@ export class Online {
 
 // ---------------------------------------------------------------- remote cars
 
-const HORN_TYPE = { car: "car", bike: "okada", bus: "danfo" };
+const HORN_TYPE = { car: "car", bike: "okada", bus: "danfo" }; // others use their own horn
 
 function nameTag(name, color) {
   const c = document.createElement("canvas");
@@ -104,14 +104,14 @@ export class RemoteCars {
     this.track = track;
     for (const p of players) {
       const spec = VEHICLES[p.vehicle] || VEHICLES.car;
-      const type = p.vehicle === "bike" ? "bike" : p.vehicle === "bus" ? "bus" : "car";
-      const mesh = buildVehicle(type, parseInt(String(p.paint || "#e8e6df").slice(1), 16));
+      const rider = parseInt(outfitOf(p.driver, p.outfit).shirt.slice(1), 16);
+      const mesh = buildVehicle(spec.model, parseInt(String(p.paint || "#e8e6df").slice(1), 16), 0, rider);
       const tag = nameTag(p.name, DRIVERS[p.driver]?.color || "#c9f06b");
-      tag.position.y = (p.vehicle === "bus" ? 3.2 : p.vehicle === "bike" ? 2.4 : 2.2) + 0.9;
+      tag.position.y = spec.tagY + 0.9;
       mesh.add(tag);
       this.scene.add(mesh);
       this.list.push({
-        id: p.id, name: p.name, vehicle: p.vehicle, driver: p.driver, mesh, tag,
+        id: p.id, name: p.name, vehicle: spec.id, driver: p.driver, mesh, tag, lean: spec.lean,
         s: 4, lat: track.laneCenter(Math.floor(track.lanes / 2)), v: 0, latV: 0,
         net: null, len: spec.length, w: spec.width, hp: 1, score: 0, horn: false,
         finished: null, bumpCooldown: 0
@@ -131,7 +131,7 @@ export class RemoteCars {
     const honked = msg.horn && !r.horn;
     r.horn = msg.horn;
     if (first) { r.s = msg.s; r.lat = msg.lat; }
-    return honked ? { ...r, hornType: HORN_TYPE[r.vehicle] } : null;
+    return honked ? { ...r, hornType: HORN_TYPE[r.vehicle] || r.vehicle } : null;
   }
 
   remove(id) {
@@ -160,7 +160,7 @@ export class RemoteCars {
       const yaw = Math.atan2(r.latV, Math.max(r.v, 3));
       this.track.place(r.mesh, r.s, r.lat, 0, yaw);
       const inner = r.mesh.userData.inner;
-      inner.rotation.z = r.vehicle === "bike" ? -r.latV * 0.09 : -r.latV * 0.012;
+      inner.rotation.z = -r.latV * r.lean;
       inner.position.y = Math.sin(t * 13 + r.id) * 0.012 * Math.min(1, r.v / 10);
     }
   }

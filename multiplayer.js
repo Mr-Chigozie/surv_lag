@@ -5,8 +5,9 @@ const { WebSocketServer } = require("ws");
 const crypto = require("node:crypto");
 
 const MAPS = ["third-mainland", "ikorodu", "lekki", "oshodi"];
-const VEHICLES = ["car", "bike", "bus"];
-const DRIVERS = ["nkechi", "tunde", "chidi", "aisha"];
+const VEHICLES = ["car", "keke", "bike", "bus", "molue", "power", "suv"];
+const DRIVERS = ["nkechi", "tunde", "chidi", "aisha", "emeka", "funke"];
+const OUTFITS = 3; // outfits per driver
 const PAINT_RE = /^#[0-9a-f]{6}$/i;
 const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 to avoid mix-ups
@@ -33,7 +34,7 @@ function broadcast(room, msg, except = null) {
 }
 
 function publicPlayer(p) {
-  return { id: p.id, name: p.name, avatar: p.avatar, vehicle: p.vehicle, driver: p.driver, paint: p.paint, ready: p.ready, inRace: p.inRace };
+  return { id: p.id, name: p.name, avatar: p.avatar, vehicle: p.vehicle, driver: p.driver, outfit: p.outfit, paint: p.paint, ready: p.ready, inRace: p.inRace };
 }
 function roomInfo(room) {
   return { type: "room", code: room.code, hostId: room.host.id, map: room.map, phase: room.phase, players: room.players.map(publicPlayer) };
@@ -54,6 +55,7 @@ function applyProfile(p, msg) {
   if (msg.avatar !== undefined) p.avatar = typeof msg.avatar === "string" && msg.avatar.length <= 40000 && AVATAR_RE.test(msg.avatar) ? msg.avatar : null;
   if (VEHICLES.includes(msg.vehicle)) p.vehicle = msg.vehicle;
   if (DRIVERS.includes(msg.driver)) p.driver = msg.driver;
+  if (Number.isInteger(msg.outfit) && msg.outfit >= 0 && msg.outfit < OUTFITS) p.outfit = msg.outfit;
   if (typeof msg.paint === "string" && PAINT_RE.test(msg.paint)) p.paint = msg.paint;
 }
 
@@ -191,7 +193,7 @@ function attachMultiplayer(server) {
   const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 64 * 1024 });
 
   wss.on("connection", (ws) => {
-    const p = { id: nextId++, ws, room: null, name: "Driver", avatar: null, vehicle: "car", driver: "nkechi", paint: "#e8e6df", ready: false, inRace: false, result: null, lastState: 0, budget: 60 };
+    const p = { id: nextId++, ws, room: null, name: "Driver", avatar: null, vehicle: "car", driver: "nkechi", outfit: 0, paint: "#e8e6df", ready: false, inRace: false, result: null, lastState: 0, budget: 60 };
     ws.isAlive = true;
     ws.on("pong", () => { ws.isAlive = true; });
     ws.on("message", (data) => {

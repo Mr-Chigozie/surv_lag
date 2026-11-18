@@ -2,7 +2,11 @@
 const ENGINE = {
   car: { base: 55, range: 120, type: "sawtooth", cutoff: 900, gain: 0.05 },
   bike: { base: 90, range: 230, type: "square", cutoff: 1500, gain: 0.035 },
-  bus: { base: 38, range: 70, type: "sawtooth", cutoff: 600, gain: 0.06 }
+  bus: { base: 38, range: 70, type: "sawtooth", cutoff: 600, gain: 0.06 },
+  keke: { base: 72, range: 130, type: "square", cutoff: 850, gain: 0.04 },
+  molue: { base: 30, range: 52, type: "sawtooth", cutoff: 450, gain: 0.07 },
+  power: { base: 105, range: 330, type: "sawtooth", cutoff: 2300, gain: 0.034 },
+  suv: { base: 46, range: 105, type: "sawtooth", cutoff: 760, gain: 0.05 }
 };
 const HORNS = {
   car: [420, 525],
@@ -12,7 +16,11 @@ const HORNS = {
   okada: [700, 0],
   truck: [180, 228],
   tanker: [185, 233],
-  brt: [260, 328]
+  brt: [260, 328],
+  keke: [560, 0],
+  molue: [210, 265],
+  power: [760, 960],
+  suv: [470, 592]
 };
 
 export class GameAudio {

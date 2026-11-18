@@ -1,16 +1,9 @@
 import * as THREE from "three";
-import { LANE_WIDTH } from "./maps.js";
+import { LANE_WIDTH, VEHICLES } from "./maps.js";
 import { buildPedestrian, part, box, merge, materials } from "./models.js";
 
 const NAMES = ["Tolu", "Emeka", "Bisi", "Ngozi", "Kunle", "Amaka", "Femi", "Zainab", "Segun", "Ifeoma", "Yemi", "Chinedu", "Halima", "Dayo", "Funmi", "Obinna", "Sade", "Ibrahim", "Kemi", "Uche", "Bola", "Musa", "Ada", "Tobi"];
 const DROP_COLORS = ["#f2b705", "#4cc9f0", "#ff6fb5", "#ff8a3c", "#a78bfa", "#f4f3e9"];
-// [base ₦, ₦ per metre] per vehicle and job kind
-const RATES = {
-  car: { passenger: [400, 1.6], parcel: [300, 1.3] },
-  bike: { passenger: [300, 1.5], parcel: [250, 1.3] },
-  bus: { passenger: [150, 0.55], parcel: [250, 0.9] }
-};
-const PASSENGER_SHARE = { car: 0.6, bike: 0.7, bus: 0.85 };
 const STOP_SPEED = 1.6; // m/s — "stopped" enough to load
 const ZONE = 9; // metres either side of a stop
 const LOAD_TIME = 0.9; // seconds per customer
@@ -36,6 +29,8 @@ export class Jobs {
     this.track = track;
     this.vehicleId = vehicleId;
     this.capacity = capacity;
+    this.payMul = 1; // driver perk (Aunty Funke)
+    this.forgive = false; // driver perk: each passenger shrugs off their first knock
     this.group = new THREE.Group();
     scene.add(this.group);
     this.points = [];
@@ -61,16 +56,18 @@ export class Jobs {
     for (let s = 110 + rng() * 60; s < map.length - 320; s += 220 + rng() * 230) {
       if (course.inClosure(s, 25)) continue;
       const point = { s, jobs: [], beam: this.beam(s, "#5fe08f", 0.32), passed: false };
-      const count = vehicleId === "bus" ? 2 + Math.floor(rng() * 4) : 1 + Math.floor(rng() * 3);
+      const fares = VEHICLES[vehicleId].jobs;
+      const [gMin, gMax] = fares.group;
+      const count = gMin + Math.floor(rng() * (gMax - gMin + 1));
       for (let k = 0; k < count; k++) {
-        const kind = rng() < PASSENGER_SHARE[vehicleId] ? "passenger" : "parcel";
+        const kind = rng() < fares.share ? "passenger" : "parcel";
         let toS = Math.min(map.length - 30, s + 260 + rng() * 950);
         // never drop off inside roadworks (the right lane may be coned off)
         for (const c of course.closures) if (toS > c.s0 - 20 && toS < c.s1 + 20) toS = c.s1 + 30;
         if (toS > map.length - 30) continue;
         const dist = toS - s;
         if (dist < 200) continue;
-        const [base, perM] = RATES[vehicleId][kind];
+        const [base, perM] = fares[kind];
         const mesh = buildPedestrian(rng, false);
         if (kind === "parcel") {
           const parcel = new THREE.Mesh(merge([part(box(0.5, 0.4, 0.4), 0xb07a45, 0, 1.0, -0.32), part(box(0.52, 0.06, 0.1), 0xe8d9a8, 0, 1.2, -0.32)]), materials.detail);
@@ -132,19 +129,28 @@ export class Jobs {
   /** Called when the player crashes into something. */
   onCrash() {
     for (const job of this.onboard) {
+      if (this.shrugs(job)) continue;
       if (job.kind === "passenger") job.rating = Math.max(1, job.rating - 1);
       else if (job.fragile) job.damage++;
     }
   }
 
+  /** With the forgiving perk, a passenger ignores the first knock of their trip. */
+  shrugs(job) {
+    if (!this.forgive || job.kind !== "passenger" || job.forgiven) return false;
+    job.forgiven = true;
+    return true;
+  }
+
   onBump() {
-    for (const job of this.onboard) if (job.kind === "passenger") job.rating = Math.max(1, job.rating - 0.5);
+    for (const job of this.onboard) if (job.kind === "passenger" && !this.shrugs(job)) job.rating = Math.max(1, job.rating - 0.5);
   }
 
   /** Final pay for a delivery, with the reasons. */
   settle(job) {
-    let amount = job.pay;
+    let amount = job.pay * this.payMul;
     const notes = [];
+    if (this.payMul > 1) notes.push(`smooth talk +${Math.round((this.payMul - 1) * 100)}%`);
     if (job.timeLeft >= 0) {
       amount *= 1.2;
       notes.push("on time +20%");

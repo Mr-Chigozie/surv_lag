@@ -11,7 +11,7 @@ const dataDir = path.join(__dirname, "data");
 const scoresFile = path.join(dataDir, "scores.json");
 
 const MAPS = ["third-mainland", "ikorodu", "lekki", "oshodi"];
-const VEHICLES = ["car", "bike", "bus"];
+const VEHICLES = ["car", "keke", "bike", "bus", "molue", "power", "suv"];
 const MAX_PER_BOARD = 10;
 const AVATAR_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
 
