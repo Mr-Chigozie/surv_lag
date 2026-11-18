@@ -7,7 +7,7 @@ npm install
 npm start        # http://localhost:3000  (PORT=xxxx to change)
 ```
 
-**Play online:** https://mr-chigozie.github.io/lagos-traffic-survivor/
+**Play online:** https://mr-chigozie.github.io/surv_lag/
 
 ## Hosting
 
