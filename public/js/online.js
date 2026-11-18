@@ -105,7 +105,7 @@ export class RemoteCars {
     for (const p of players) {
       const spec = VEHICLES[p.vehicle] || VEHICLES.car;
       const rider = parseInt(outfitOf(p.driver, p.outfit).shirt.slice(1), 16);
-      const mesh = buildVehicle(spec.model, parseInt(String(p.paint || "#e8e6df").slice(1), 16), 0, rider);
+      const mesh = buildVehicle(spec.model, parseInt(String(p.paint || "#e8e6df").slice(1), 16), 0, rider, true);
       const tag = nameTag(p.name, DRIVERS[p.driver]?.color || "#c9f06b");
       tag.position.y = spec.tagY + 0.9;
       mesh.add(tag);

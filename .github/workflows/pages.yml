@@ -31,10 +31,11 @@ jobs:
       - run: npm ci --omit=dev
       - name: Assemble site
         run: |
-          mkdir -p _site/vendor/three/examples/jsm/utils
+          mkdir -p _site/vendor/three/examples/jsm/utils _site/vendor/three/examples/jsm/loaders
           cp -r public/. _site/
           cp -r node_modules/three/build _site/vendor/three/build
           cp node_modules/three/examples/jsm/utils/BufferGeometryUtils.js _site/vendor/three/examples/jsm/utils/
+          cp node_modules/three/examples/jsm/loaders/GLTFLoader.js _site/vendor/three/examples/jsm/loaders/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

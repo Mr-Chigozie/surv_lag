@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { LANE_WIDTH, VEHICLES } from "./maps.js";
-import { buildVehicle, getBlueprint, bodyMaterial } from "./models.js";
+import { buildVehicle, getBlueprint, setPaint } from "./models.js";
 
 const TYPES = {
   car: { vmin: 15, vmax: 26, lc: 2.4, T: 1.1, gap0: 2.5, colors: [0xd45b43, 0x5690a0, 0xb6a281, 0x555861, 0xe8e6e0, 0x1f2a44, 0x8c1c1c, 0x2e6b4f, 0xc0c4c8] },
@@ -48,7 +48,7 @@ export class Traffic {
       mesh = buildVehicle(type, color, variant);
       this.group.add(mesh);
     }
-    mesh.userData.inner.children[0].material = bodyMaterial(color);
+    setPaint(mesh, color);
     mesh.visible = true;
     mesh.userData.poolKey = key;
     return mesh;

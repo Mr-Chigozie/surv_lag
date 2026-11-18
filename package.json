@@ -5,7 +5,8 @@
   "description": "A 3D traffic-survival driving game set on Lagos roads (Three.js + Tailwind + Node).",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "models": "\"C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe\" -b --python tools/blender/build_vehicles.py -- public/models"
   },
   "engines": {
     "node": ">=18"

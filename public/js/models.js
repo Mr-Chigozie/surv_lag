@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 // ---------- geometry helpers ----------
 const tmpMatrix = new THREE.Matrix4();
@@ -348,7 +349,73 @@ export function getBlueprint(type, variant = 0, rider = null) {
   }
 }
 
-export function buildVehicle(type, color, variant = 0, rider = null) {
+// ---------- detailed Blender models (tools/blender/build_vehicles.py → public/models/*.glb) ----------
+const GLB_FILES = { car: "car", bus: "danfo", bike: "okada", keke: "keke", molue: "molue", superbike: "superbike", suv: "suv" };
+const glbTemplates = {};
+const glbPaint = new Map();
+const glbShirt = new Map();
+const glbLights = {};
+
+/** Load the Blender models. Missing files are fine: those vehicles keep the built-in block models. */
+export async function loadVehicleModels(base = "./models/") {
+  const loader = new GLTFLoader();
+  const names = [...new Set(Object.values(GLB_FILES))];
+  const results = await Promise.allSettled(names.map((n) => loader.loadAsync(`${base}${n}.glb`)));
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") glbTemplates[names[i]] = r.value.scene;
+    else console.warn(`Vehicle model ${names[i]}.glb not loaded; using the block model.`);
+  });
+  return Object.keys(glbTemplates).length;
+}
+
+function paintFor(color) {
+  if (!glbPaint.has(color)) glbPaint.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.38, metalness: 0.35 }));
+  return glbPaint.get(color);
+}
+function shirtFor(color) {
+  if (!glbShirt.has(color)) glbShirt.set(color, new THREE.MeshStandardMaterial({ color, roughness: 0.85 }));
+  return glbShirt.get(color);
+}
+function lightFor(material) {
+  const key = material.name;
+  if (!glbLights[key]) glbLights[key] = new THREE.MeshBasicMaterial({ color: material.color.clone(), toneMapped: false });
+  return glbLights[key];
+}
+
+function buildDetailed(type, color, rider) {
+  const template = glbTemplates[GLB_FILES[type]];
+  const model = template.clone(true);
+  const paintMeshes = [];
+  model.traverse((o) => {
+    if (!o.isMesh) return;
+    o.castShadow = true;
+    // the exporter gives one mesh per material, so each mesh has a single material
+    const name = o.material.name;
+    if (name === "Body") { o.material = paintFor(color); paintMeshes.push(o); }
+    else if (name === "Shirt" && rider !== null) o.material = shirtFor(rider);
+    else if (name === "Head" || name === "Tail") o.material = lightFor(o.material);
+  });
+  const group = new THREE.Group();
+  const inner = new THREE.Group();
+  group.add(inner);
+  inner.add(model);
+  group.userData = { inner, blueprint: getBlueprint(type, 0, rider), paintMeshes };
+  return group;
+}
+
+/** Repaint a vehicle built by buildVehicle (block or detailed). */
+export function setPaint(vehicle, color) {
+  const { paintMeshes, inner } = vehicle.userData;
+  if (paintMeshes) {
+    for (const o of paintMeshes) o.material = paintFor(color);
+  } else {
+    inner.children[0].material = bodyMaterial(color);
+  }
+}
+
+/** `detailed` uses the Blender model when it loaded (player and online rides; traffic stays light). */
+export function buildVehicle(type, color, variant = 0, rider = null, detailed = false) {
+  if (detailed && glbTemplates[GLB_FILES[type]]) return buildDetailed(type, color, rider);
   const bp = getBlueprint(type, variant, rider);
   const group = new THREE.Group();
   const inner = new THREE.Group(); // inner group can lean/bounce without fighting road placement

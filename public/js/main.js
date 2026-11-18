@@ -4,7 +4,7 @@ import { Track, makeRng } from "./track.js";
 import { buildWorld } from "./world.js";
 import { Course } from "./course.js";
 import { Traffic } from "./traffic.js";
-import { buildVehicle } from "./models.js";
+import { buildVehicle, loadVehicleModels } from "./models.js";
 import { GameAudio } from "./audio.js";
 import { loadCareer, saveCareer, applyUpgrades, paintColor, upgradeCost, level, spend, PRICES, UPGRADES, PAINTS, REPAIR_COST, BASE_CAPACITY, outfitCost, ownsOutfit } from "./career.js";
 import { Jobs, naira } from "./jobs.js";
@@ -195,7 +195,7 @@ function buildRace(mapId, vehicleId, attract = false, seed = null, gridIndex = n
   const spec = effectiveSpec(vehicleId, driver.id);
   // online: a shared seed gives every player the same customers in the same places
   const jobs = new Jobs(scene, map, track, course, vehicleId, spec.capacity, !attract, seed === null ? Math.random : makeRng(`${seed}-jobs`));
-  const playerMesh = buildVehicle(VEHICLES[vehicleId].model, paintColor(career, vehicleId, VEHICLES[vehicleId].color), 0, riderColor());
+  const playerMesh = buildVehicle(VEHICLES[vehicleId].model, paintColor(career, vehicleId, VEHICLES[vehicleId].color), 0, riderColor(), true);
   jobs.payMul = driver.pay;
   jobs.forgive = !!driver.forgive;
   scene.add(playerMesh);
@@ -1725,6 +1725,7 @@ function checkInviteLink() {
 }
 
 // ---------------------------------------------------------------- boot
+await loadVehicleModels(); // Blender models; falls back to block models if any are missing
 resize();
 renderMenu();
 buildRace(settings.map, settings.vehicle, true);

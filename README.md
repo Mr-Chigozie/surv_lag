@@ -77,6 +77,12 @@ Each player simulates their own traffic, so NPC cars differ slightly between scr
 
 All per-vehicle rules (stats, fares, repair cost, camera, sounds) live in the `VEHICLES` table in `public/js/maps.js`.
 
+### 3D models (Blender)
+
+The player vehicles are modelled by a Blender script, `tools/blender/build_vehicles.py`, and exported to `public/models/*.glb`. To change a design, edit the script and rebuild with `npm run models` (Blender 5.2 path in `package.json`; change it if Blender is installed elsewhere). To rebuild only some, run `blender -b --python tools/blender/build_vehicles.py -- public/models keke suv`.
+
+Material names are read by the game: `Body` takes the paint colour, `Shirt` takes the driver's outfit colour, and `Head`/`Tail` glow. Traffic keeps the lighter built-in block models, and so does any vehicle whose .glb is missing.
+
 ## Drivers
 
 | Driver | Style |
