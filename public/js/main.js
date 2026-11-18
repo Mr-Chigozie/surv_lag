@@ -282,7 +282,7 @@ function renderMenu() {
   ui.onlineBtn.textContent = online.room ? `ONLINE · ROOM ${online.room.code}` : "PLAY ONLINE";
   renderProfile();
   ui.vehicleCards.innerHTML = Object.values(VEHICLES).map((v) => `
-    <button class="card glass rounded-xl p-4 text-left ${career.vehicles.includes(v.id) ? "" : "opacity-80"}" data-vehicle="${v.id}" aria-pressed="${v.id === settings.vehicle}">
+    <button class="card glass shrink-0 snap-start w-[78vw] max-w-[300px] sm:w-auto sm:max-w-none rounded-xl p-4 text-left ${career.vehicles.includes(v.id) ? "" : "opacity-80"}" data-vehicle="${v.id}" aria-pressed="${v.id === settings.vehicle}">
       <div class="flex items-center justify-between"><span class="text-2xl">${ICONS[v.id]}</span><span class="font-mono text-[9px] tracking-widest text-white/40">${Math.round(v.maxSpeed * 3.6)} KM/H</span></div>
       <div class="mt-2 font-display text-sm font-bold">${v.name.toUpperCase()}</div>
       <div class="mb-1 text-[11px] leading-snug text-white/50">${v.blurb}</div>
@@ -291,7 +291,7 @@ function renderMenu() {
     </button>`).join("");
 
   ui.driverCards.innerHTML = Object.values(DRIVERS).map((d) => `
-    <button class="card glass rounded-xl p-3.5 text-left" data-driver="${d.id}" aria-pressed="${d.id === settings.driver}">
+    <button class="card glass shrink-0 snap-start w-[78vw] max-w-[300px] sm:w-auto sm:max-w-none rounded-xl p-3.5 text-left" data-driver="${d.id}" aria-pressed="${d.id === settings.driver}">
       <div class="flex items-center gap-2.5">
         <span class="block h-14 w-14 shrink-0 rounded-full ring-2 ring-white/10 transition [[aria-pressed=true]_&]:ring-lime">${driverPortrait(d, "h-full w-full", currentOutfit(d.id))}</span>
         <span class="min-w-0"><span class="block font-display text-sm font-bold leading-tight">${d.name}</span><span class="block font-mono text-[8px] tracking-widest text-white/45">${d.title}</span></span>
@@ -303,7 +303,7 @@ function renderMenu() {
 
   const traffic = (d) => d > 1.3 ? "GRIDLOCK" : d > 1.1 ? "HEAVY" : d > 0.88 ? "BUSY" : "FLOWING";
   ui.mapCards.innerHTML = Object.values(MAPS).map((m) => `
-    <button class="card glass rounded-xl p-4 text-left ${career.routes.includes(m.id) ? "" : "opacity-80"}" data-map="${m.id}" aria-pressed="${m.id === settings.map}">
+    <button class="card glass shrink-0 snap-start w-[78vw] max-w-[300px] sm:w-auto sm:max-w-none rounded-xl p-4 text-left ${career.routes.includes(m.id) ? "" : "opacity-80"}" data-map="${m.id}" aria-pressed="${m.id === settings.map}">
       <div class="flex items-center justify-between font-mono text-[9px] tracking-widest"><span class="text-lime">${m.short}</span><span class="text-white/40">${m.time}</span></div>
       <div class="mt-1.5 font-display text-base font-bold">${m.name}</div>
       <div class="mb-2 text-[11px] leading-snug text-white/50">${m.tagline}</div>
@@ -315,6 +315,13 @@ function renderMenu() {
       </div>
       ${career.routes.includes(m.id) ? "" : lockBadge(PRICES.routes[m.id])}
     </button>`).join("");
+  // phones: swipe rows start on the current pick
+  for (const row of [ui.vehicleCards, ui.driverCards, ui.mapCards]) {
+    const picked = row.querySelector('[aria-pressed="true"]');
+    if (!picked || row.scrollWidth <= row.clientWidth) continue;
+    const r = picked.getBoundingClientRect(), box = row.getBoundingClientRect();
+    if (r.left < box.left || r.right > box.right) row.scrollLeft += r.left - box.left - 16;
+  }
   ui.quality.textContent = `GFX: ${settings.quality.toUpperCase()}`;
   ui.sound.textContent = `SOUND: ${settings.sound ? "ON" : "OFF"}`;
   loadBoard();
